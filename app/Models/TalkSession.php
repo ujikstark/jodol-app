@@ -12,13 +12,13 @@ class TalkSession extends Model
     use HasFactory;
     use HasUuids;
 
-     /** @var array<int, string> */
-     protected $fillable = [
+    /** @var array<int, string> */
+    protected $fillable = [
         'man_id',
         'woman_id',
         'start_at',
         'link',
-        'status'
+        'status',
     ];
 
     /** @return BelongsTo<User, TalkSession> */
@@ -32,7 +32,4 @@ class TalkSession extends Model
     {
         return $this->belongsTo(User::class, 'woman_id');
     }
-
-
-
 }
