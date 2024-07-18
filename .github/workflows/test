@@ -1,0 +1,52 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql/mysql-server:8.0
+        env:
+          MYSQL_DATABASE: testing
+          MYSQL_USER: root
+          MYSQL_PASSWORD: root
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PHP with extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          tools: composer:v2
+
+      - name: Install npm packages
+        uses: bahmutov/npm-install@v1
+
+      - name: Build vite assets
+        run: npm run build
+        env:
+          VITE_INCLUDE_JQUERY: false
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Setup application key and database
+        run: |
+          cp .env-ci .env
+          php artisan migrate --env=testing
+          php artisan key:generate --env=testing
+
+      - name: Run tests
+        run: php artisan test --parallel
