@@ -19,11 +19,6 @@ jobs:
           MYSQL_ROOT_PASSWORD: root
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping --silent"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 3
 
     steps:
       - name: Checkout
@@ -46,9 +41,6 @@ jobs:
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v3
 
-      - name: Wait for MySQL to be ready
-        run: |
-          dockerize -wait tcp://mysql:3306 -timeout 1m
 
       - name: Setup application key and database
         run: |
