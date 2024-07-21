@@ -4,6 +4,8 @@ namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use App\Models\User;
+
 
 class RegistrationTest extends TestCase
 {
@@ -27,5 +29,23 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_new_user_cannot_register_with_used_email(): void
+    {
+        User::factory()->create(['email' => 'test@example.com']);
+
+        $this->get('/register');
+
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertRedirect(route('register'));
+        $response->assertSessionHasErrors('email');
     }
 }
