@@ -1,11 +1,12 @@
 services:
-    laravel.test:
+    laravel:
         build:
-            context: ./vendor/laravel/sail/runtimes/8.3
+            context: ./docker/8.3
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP}'
-        image: sail-8.3/app
+        image: 'jodol-app/php'
+        container_name: 'laravel_ujik'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -17,13 +18,15 @@ services:
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            PHP_IDE_CONFIG: 'serverName=docker'
         volumes:
             - '.:/var/www/html'
         networks:
-            - sail
+            - jodol-app
         depends_on:
             - mysql
     mysql:
+        container_name: 'mysql'
         image: 'mysql/mysql-server:8.0'
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
@@ -35,10 +38,10 @@ services:
             MYSQL_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ALLOW_EMPTY_PASSWORD: 1
         volumes:
-            - 'sail-mysql:/var/lib/mysql'
-            - './vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
+            - 'jodol-app-mysql:/var/lib/mysql'
+            - './docker/mysql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
         networks:
-            - sail
+            - jodol-app
         healthcheck:
             test:
                 - CMD
@@ -47,11 +50,31 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        environment:
+            PMA_HOST: mysql
+            PMA_ARBITARY: 1
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+        ports:
+            - 8001:80
+        depends_on:
+            - mysql       
+        networks:
+            - jodol-app
+    mailpit:
+        image: 'axllent/mailpit:latest'
+        container_name: mailpit_ujik
+        ports:
+            - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+            - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+        networks:
+            - jodol-app     
 networks:
     jodol-app:
+        name: jodol-app
         driver: bridge
 volumes:
     jodol-app-mysql:
         driver: local
-    jodol-app-redis:
-        driver: local
+ 
